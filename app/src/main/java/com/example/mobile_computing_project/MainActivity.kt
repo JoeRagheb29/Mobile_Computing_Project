@@ -1,47 +1,129 @@
 package com.example.mobile_computing_project
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.mobile_computing_project.ui.theme.Mobile_Computing_ProjectTheme
+import androidx.compose.runtime.*
+import androidx.lifecycle.lifecycleScope
+import com.example.mobile_computing_project.DataBase.Daf3aDatabase
+import com.example.mobile_computing_project.DataBase.SessionManager
+import com.example.mobile_computing_project.DataBase.UserEntity
+import com.example.mobile_computing_project.ui.LoginScreen
+import com.example.mobile_computing_project.ui.RegisterScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var db: Daf3aDatabase
+    private lateinit var sessionManager: SessionManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        db = Daf3aDatabase.getInstance(this)
+        sessionManager = SessionManager(this)
+
+        // Skip login if user already has an active session (Lab 4 SharedPreferences)
+        if (sessionManager.isLoggedIn()) {
+            navigateToHome(sessionManager.getUserId(), sessionManager.getUsername())
+            return
+        }
+
         setContent {
-            Mobile_Computing_ProjectTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            var isLoginScreen by remember { mutableStateOf(true) }
+
+            if (isLoginScreen) {
+                LoginScreen(
+                    onLoginClick = { username, password ->
+                        handleLogin(username, password)
+                    },
+                    onNavigateToRegister = { isLoginScreen = false }
+                )
+            } else {
+                RegisterScreen(
+                    onRegisterClick = { username, phone, password, balance ->
+                        handleRegister(username, phone, password, balance) {
+                            isLoginScreen = true
+                        }
+                    },
+                    onNavigateToLogin = { isLoginScreen = true }
+                )
+            }
+        }
+    }
+
+    private fun handleLogin(username: String, password: String) {
+        if (username.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val user = db.userDao().getByUsername(username)
+            withContext(Dispatchers.Main) {
+                if (user != null && user.password == password) {
+                    sessionManager.saveUserSession(user.userId, user.username)
+                    Toast.makeText(this@MainActivity, "Welcome ${user.username}!", Toast.LENGTH_SHORT).show()
+                    navigateToHome(user.userId, user.username)
+                } else {
+                    Toast.makeText(this@MainActivity, "Invalid username or password", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    private fun handleRegister(
+        username: String,
+        phone: String,
+        password: String,
+        balance: Long,
+        onSuccess: () -> Unit
+    ) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val existingUser = db.userDao().getByUsername(username)
+            val existingPhone = db.userDao().getByPhone(phone)
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Mobile_Computing_ProjectTheme {
-        Greeting("Android")
+            if (existingUser != null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Username already taken", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+
+            if (existingPhone != null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Phone number already registered", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+
+            val newUser = UserEntity(
+                username = username,
+                password = password,
+                phone = phone,
+                balance = balance
+            )
+            db.userDao().insert(newUser)
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, "Account created! Please login.", Toast.LENGTH_SHORT).show()
+                onSuccess()
+            }
+        }
+    }
+
+    private fun navigateToHome(userId: Int, username: String) {
+        val intent = Intent(this, HomeActivity::class.java).apply {
+            putExtra("USER_ID", userId)
+            putExtra("USERNAME", username)
+        }
+        startActivity(intent)
+        finish()
     }
 }
