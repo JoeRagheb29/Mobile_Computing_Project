@@ -26,7 +26,6 @@ class HomeActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val sessionManager = SessionManager(this)
-        // Retrieve data passed via Explicit Intent (Lab 3)
         val username = intent.getStringExtra("USERNAME") ?: sessionManager.getUsername()
         val userId = intent.getIntExtra("USER_ID", sessionManager.getUserId())
 
@@ -34,6 +33,12 @@ class HomeActivity : ComponentActivity() {
             HomePlaceholderScreen(
                 username = username,
                 userId = userId,
+                onSendMoneyClick = {
+                    val intent = Intent(this, SendMoneyActivity::class.java).apply {
+                        putExtra("EXTRA_USER_ID", userId)
+                    }
+                    startActivity(intent)
+                },
                 onLogoutClick = {
                     sessionManager.logout()
                     val intent = Intent(this, MainActivity::class.java)
@@ -49,6 +54,7 @@ class HomeActivity : ComponentActivity() {
 fun HomePlaceholderScreen(
     username: String,
     userId: Int,
+    onSendMoneyClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     Column(
@@ -71,15 +77,35 @@ fun HomePlaceholderScreen(
             color = Color.Gray,
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
         )
+
+        // Send Money button
         Button(
-            onClick = onLogoutClick,
+            onClick = onSendMoneyClick,
             colors = ButtonDefaults.buttonColors(containerColor = Daf3aPrimary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text("Logout", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Send Money", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Logout button (outlined so it's visually secondary)
+        OutlinedButton(
+            onClick = onLogoutClick,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text(
+                "Logout",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Daf3aPrimary
+            )
         }
     }
 }
