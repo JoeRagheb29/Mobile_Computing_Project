@@ -5,15 +5,14 @@ import androidx.room.PrimaryKey
 import androidx.room.Index
 
 @Entity(tableName = "User", indices = [
-    Index(value = ["Username"], unique = true),
-    Index(value = ["Phone"], unique = true),
-    Index(value = ["Password"], unique = true)
+    Index(value = ["username"], unique = true),
+    Index(value = ["phone"], unique = true)
 ])
 data class UserEntity (
     @PrimaryKey(autoGenerate = true)
-        val UserId: Int=0,
-        val Username: String,
-        val Password: String,
-        val Phone: String,
-        val Balance: Long=0
+        val userId: Int=0,
+        val username: String,
+        val password: String,
+        val phone: String,
+        val balance: Long=0
 )
