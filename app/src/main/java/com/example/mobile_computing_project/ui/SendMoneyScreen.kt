@@ -15,13 +15,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,18 +29,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mobile_computing_project.ui.Daf3aPrimary
 import com.example.mobile_computing_project.ui.theme.Mobile_Computing_ProjectTheme
-import com.example.mobile_computing_project.DataBase.SessionManager
 
 @Composable
 fun SendMoneyScreen(
     balance: Long,
     onContactsClick: () -> Unit,
     onSendClick: (String, String, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pickedPhone: String = "",
+    clearTrigger: Int = 0
 ) {
     var phone by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var method by remember { mutableStateOf("Daf3a") }
+
+    // Fill the phone field when a contact is picked
+    LaunchedEffect(pickedPhone) {
+        if (pickedPhone.isNotEmpty()) phone = pickedPhone
+    }
+
+    // Empty the text boxes after a successful transfer
+    LaunchedEffect(clearTrigger) {
+        if (clearTrigger > 0) {
+            phone = ""
+            amount = ""
+        }
+    }
 
     Column(
         modifier = modifier
