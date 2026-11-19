@@ -13,4 +13,9 @@ interface TransactionDao {
               WHERE senderId = :userId OR receiverId = :userId
               ORDER BY timestamp DESC""")
     suspend fun getForUser(userId: Int): List<TransactionEntity>
+
+    @Query("""SELECT * FROM transactions
+              WHERE receiverId = :userId AND transactionId > :lastSeenId
+              ORDER BY transactionId ASC""")
+    suspend fun getNewIncomingTransactions(userId: Int, lastSeenId: Int): List<TransactionEntity>
 }

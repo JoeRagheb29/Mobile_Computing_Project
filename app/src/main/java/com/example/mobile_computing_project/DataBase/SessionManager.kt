@@ -22,4 +22,14 @@ class SessionManager(context: Context) {
     fun logout() {
         sharedPref.edit().clear().apply()
     }
+
+    private val txPref = context.getSharedPreferences("Daf3aTxPrefs", Context.MODE_PRIVATE)
+
+    fun getLastSeenTransactionId(userId: Int): Int {
+        return txPref.getInt("LAST_SEEN_TX_$userId", 0)
+    }
+
+    fun setLastSeenTransactionId(userId: Int, txId: Int) {
+        txPref.edit().putInt("LAST_SEEN_TX_$userId", txId).apply()
+    }
 }
