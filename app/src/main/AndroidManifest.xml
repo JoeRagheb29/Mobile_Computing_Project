@@ -46,6 +46,7 @@
 
         <activity
             android:name=".TransactionReceiptActivity"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
             android:exported="false" />
 
         <provider

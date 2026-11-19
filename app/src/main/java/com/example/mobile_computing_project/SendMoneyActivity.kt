@@ -192,6 +192,16 @@ class SendMoneyActivity : ComponentActivity() {
                 if (success) {
                     pickedPhone = ""
                     clearTrigger++
+
+                    TransactionReceiptActivity.start(
+                        context = this@SendMoneyActivity,
+                        txnId = System.currentTimeMillis().toString(),
+                        amount = "$amount EGP",
+                        sender = sender?.phone ?: userId.toString(),
+                        receiver = receiver?.phone ?: phone,
+                        date = getCurrentFormattedDate()
+                    )
+
                 }
             }
         }
@@ -227,8 +237,22 @@ class SendMoneyActivity : ComponentActivity() {
                 if (success) {
                     pickedPhone = ""
                     clearTrigger++
+
+                    TransactionReceiptActivity.start(
+                        context = this@SendMoneyActivity,
+                        txnId = System.currentTimeMillis().toString(),
+                        amount = "$amount EGP",
+                        sender = sender?.phone ?: userId.toString(),
+                        receiver = "wallet 01154229101",
+                        date = getCurrentFormattedDate()
+                    )
                 }
             }
         }
+    }
+
+    private fun getCurrentFormattedDate(): String {
+        val formatter = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault())
+        return formatter.format(java.util.Date())
     }
 }
