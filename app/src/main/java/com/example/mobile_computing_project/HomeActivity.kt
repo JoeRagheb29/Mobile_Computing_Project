@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
@@ -77,6 +80,12 @@ class HomeActivity : ComponentActivity() {
                     }
                     startActivity(intent)
                 },
+                onVerifyPassword = { password, onResult ->
+                    verifyPassword(password, onResult)
+                },
+                onRecharge = { amount ->
+                    rechargeBalance(amount)
+                },
                 onLogoutClick = {
                     scannerJob?.cancel()
                     sessionManager.logout()
@@ -109,6 +118,34 @@ class HomeActivity : ComponentActivity() {
                 withContext(Dispatchers.Main) {
                     balanceState.longValue = user.balance
                 }
+            }
+        }
+    }
+
+    // Checks the typed password against the logged in user's password
+    private fun verifyPassword(password: String, onResult: (Boolean) -> Unit) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val user = db.userDao().getById(currentUserId)
+            val isCorrect = user != null && user.password == password
+            withContext(Dispatchers.Main) {
+                onResult(isCorrect)
+            }
+        }
+    }
+
+    // Adds the amount to the user's balance and refreshes the card
+    private fun rechargeBalance(amount: Long) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val user = db.userDao().getById(currentUserId) ?: return@launch
+            val newBalance = user.balance + amount
+            db.userDao().updateBalance(user.userId, newBalance)
+            withContext(Dispatchers.Main) {
+                balanceState.longValue = newBalance
+                Toast.makeText(
+                    this@HomeActivity,
+                    "Recharged $amount EGP",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -163,8 +200,101 @@ fun HomeScreen(
     onSendMoneyClick: () -> Unit,
     onProfileClick: () -> Unit,
     onTransactionsClick: () -> Unit,
+    onVerifyPassword: (String, (Boolean) -> Unit) -> Unit,
+    onRecharge: (Long) -> Unit,
     onLogoutClick: () -> Unit
 ) {
+    // Recharge popup state: step 0 = ask for password, step 1 = ask for amount
+    var showRechargeDialog by remember { mutableStateOf(false) }
+    var rechargeStep by remember { mutableIntStateOf(0) }
+    var passwordInput by remember { mutableStateOf("") }
+    var amountInput by remember { mutableStateOf("") }
+    var dialogError by remember { mutableStateOf("") }
+
+    val closeDialog = {
+        showRechargeDialog = false
+        rechargeStep = 0
+        passwordInput = ""
+        amountInput = ""
+        dialogError = ""
+    }
+
+    if (showRechargeDialog) {
+        AlertDialog(
+            onDismissRequest = closeDialog,
+            title = {
+                Text(if (rechargeStep == 0) "Enter your password" else "Recharge amount")
+            },
+            text = {
+                Column {
+                    if (rechargeStep == 0) {
+                        OutlinedTextField(
+                            value = passwordInput,
+                            onValueChange = { passwordInput = it },
+                            label = { Text("Password") },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = amountInput,
+                            onValueChange = { amountInput = it },
+                            label = { Text("Amount (EGP)") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                    }
+
+                    if (dialogError.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(dialogError, color = Color.Red, fontSize = 12.sp)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (rechargeStep == 0) {
+                            if (passwordInput.isEmpty()) {
+                                dialogError = "Please enter your password"
+                            } else {
+                                onVerifyPassword(passwordInput) { isCorrect ->
+                                    if (isCorrect) {
+                                        rechargeStep = 1
+                                        passwordInput = ""
+                                        dialogError = ""
+                                    } else {
+                                        dialogError = "Wrong password"
+                                    }
+                                }
+                            }
+                        } else {
+                            val amount = amountInput.trim().toLongOrNull()
+                            if (amount == null || amount <= 0) {
+                                dialogError = "Enter a valid amount"
+                            } else {
+                                onRecharge(amount)
+                                closeDialog()
+                            }
+                        }
+                    }
+                ) {
+                    Text(
+                        if (rechargeStep == 0) "Continue" else "Recharge",
+                        color = Daf3aPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = closeDialog) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -197,24 +327,43 @@ fun HomeScreen(
             colors = CardDefaults.cardColors(containerColor = Daf3aPrimary),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.Start
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Available Balance",
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 14.sp
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Available Balance",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 14.sp
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "EGP $balance",
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                    Text(
+                        text = "EGP $balance",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+
+                // Recharge button, right next to the balance
+                Button(
+                    onClick = { showRechargeDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Daf3aPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Recharge", fontWeight = FontWeight.Bold)
+                }
             }
         }
 
