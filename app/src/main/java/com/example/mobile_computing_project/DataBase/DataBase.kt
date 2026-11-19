@@ -4,13 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
-@Database(entities = [UserEntity::class, TransactionEntity::class], version = 1)
+@Database(entities = [UserEntity::class, TransactionEntity::class, NotificationEntity::class], version = 2)
+@TypeConverters(
+    NotificationConverters::class
+)
 abstract class Daf3aDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
     abstract fun transactionDao(): TransactionDao
-
+    abstract fun notificationDao(): NotificationDao
     companion object {
         @Volatile
         private var INSTANCE: Daf3aDatabase? = null

@@ -20,8 +20,6 @@ import androidx.lifecycle.lifecycleScope
 import com.example.mobile_computing_project.DataBase.Daf3aDatabase
 import com.example.mobile_computing_project.DataBase.SessionManager
 import com.example.mobile_computing_project.DataBase.TransactionEntity
-import com.example.mobile_computing_project.DataBase.UserEntity
-import com.example.mobile_computing_project.ui.TwoFactorAuthDialog
 import com.example.mobile_computing_project.ui.theme.Mobile_Computing_ProjectTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -153,95 +151,83 @@ class SendMoneyActivity : ComponentActivity() {
         }
     }
 
+    // Both users must be in the database
     private fun sendByDaf3a(phone: String, amount: Long) {
         lifecycleScope.launch(Dispatchers.IO) {
             val userDao = db.userDao()
             val sender = userDao.getById(userId)
             val receiver = userDao.getByPhone(phone)
 
+            var message: String
+            var newBalance = sender?.balance ?: 0L
+            var success = false
+
             if (sender == null) {
-                withContext(Dispatchers.Main) { showMessage("Sender not found") }
-                return@launch
-            }
-            if (receiver == null) {
-                withContext(Dispatchers.Main) { showMessage("Receiver is not registered in Daf3a") }
-                return@launch
-            }
-            if (receiver.userId == sender.userId) {
-                withContext(Dispatchers.Main) { showMessage("You cannot send money to yourself") }
-                return@launch
-            }
-            if (sender.balance < amount) {
-                withContext(Dispatchers.Main) { showMessage("Insufficient balance") }
-                return@launch
-            }
-
-            withContext(Dispatchers.Main) {
-                TwoFactorAuthDialog(this@SendMoneyActivity, sender.phone) {
-                    performDaf3aTransfer(sender, receiver, amount)
-                }.show()
-            }
-        }
-    }
-
-    private fun performDaf3aTransfer(sender: UserEntity, receiver: UserEntity, amount: Long) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val userDao = db.userDao()
-            userDao.updateBalance(sender.userId, sender.balance - amount)
-            userDao.updateBalance(receiver.userId, receiver.balance + amount)
-            db.transactionDao().insert(
-                TransactionEntity(
-                    senderId = sender.userId,
-                    receiverId = receiver.userId,
-                    amount = amount
+                message = "Sender not found"
+            } else if (receiver == null) {
+                message = "Receiver is not registered in Daf3a"
+            } else if (receiver.userId == sender.userId) {
+                message = "You cannot send money to yourself"
+            } else if (sender.balance < amount) {
+                message = "Insufficient balance"
+            } else {
+                // take from the sender, give to the receiver, save the transaction
+                userDao.updateBalance(sender.userId, sender.balance - amount)
+                userDao.updateBalance(receiver.userId, receiver.balance + amount)
+                db.transactionDao().insert(
+                    TransactionEntity(
+                        senderId = sender.userId,
+                        receiverId = receiver.userId,
+                        amount = amount
+                    )
                 )
-            )
-            val newBalance = sender.balance - amount
+                newBalance = sender.balance - amount
+                message = "Sent $amount to ${receiver.username}"
+                success = true
+            }
+
             withContext(Dispatchers.Main) {
                 balance = newBalance
-                showMessage("Sent $amount to ${receiver.username}")
-                pickedPhone = ""
-                clearTrigger++
+                showMessage(message)
+                if (success) {
+                    pickedPhone = ""
+                    clearTrigger++
+                }
             }
         }
     }
 
+    // The receiver does not need to be in the database, only the number structure is checked
     private fun sendByWallet(phone: String, amount: Long) {
         lifecycleScope.launch(Dispatchers.IO) {
             val userDao = db.userDao()
             val sender = userDao.getById(userId)
 
+            var message: String
+            var newBalance = sender?.balance ?: 0L
+            var success = false
+
             if (sender == null) {
-                withContext(Dispatchers.Main) { showMessage("Sender not found") }
-                return@launch
-            }
-            if (phone == sender.phone) {
-                withContext(Dispatchers.Main) { showMessage("You cannot send money to yourself") }
-                return@launch
-            }
-            if (sender.balance < amount) {
-                withContext(Dispatchers.Main) { showMessage("Insufficient balance") }
-                return@launch
+                message = "Sender not found"
+            } else if (phone == sender.phone) {
+                message = "You cannot send money to yourself"
+            } else if (sender.balance < amount) {
+                message = "Insufficient balance"
+            } else {
+                // only the sender balance changes
+                userDao.updateBalance(sender.userId, sender.balance - amount)
+                newBalance = sender.balance - amount
+                message = "Sent $amount to wallet $phone"
+                success = true
             }
 
-            withContext(Dispatchers.Main) {
-                TwoFactorAuthDialog(this@SendMoneyActivity, sender.phone) {
-                    performWalletTransfer(sender, phone, amount)
-                }.show()
-            }
-        }
-    }
-
-    private fun performWalletTransfer(sender: UserEntity, phone: String, amount: Long) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val userDao = db.userDao()
-            userDao.updateBalance(sender.userId, sender.balance - amount)
-            val newBalance = sender.balance - amount
             withContext(Dispatchers.Main) {
                 balance = newBalance
-                showMessage("Sent $amount to wallet $phone")
-                pickedPhone = ""
-                clearTrigger++
+                showMessage(message)
+                if (success) {
+                    pickedPhone = ""
+                    clearTrigger++
+                }
             }
         }
     }
