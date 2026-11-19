@@ -42,6 +42,21 @@
             android:label="@string/title_activity_home"
             android:theme="@style/Theme.Mobile_Computing_Project"
             android:windowSoftInputMode="adjustResize" />
+
+
+        <activity
+            android:name=".TransactionReceiptActivity"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
