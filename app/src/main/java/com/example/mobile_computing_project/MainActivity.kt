@@ -58,6 +58,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Phone number structure: 11 digits starting with 010, 011, 012 or 015
+    private fun isValidPhone(phone: String): Boolean {
+        return Regex("^01[0125][0-9]{8}$").matches(phone)
+    }
+
     private fun handleLogin(username: String, password: String) {
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -85,6 +90,12 @@ class MainActivity : ComponentActivity() {
         balance: Long,
         onSuccess: () -> Unit
     ) {
+        // Verify the phone number structure before touching the database
+        if (!isValidPhone(phone)) {
+            Toast.makeText(this, "Invalid phone number", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         lifecycleScope.launch(Dispatchers.IO) {
             val existingUser = db.userDao().getByUsername(username)
             val existingPhone = db.userDao().getByPhone(phone)
