@@ -26,7 +26,9 @@ abstract class Daf3aDatabase : RoomDatabase() {
                         context.applicationContext,
                         Daf3aDatabase::class.java,
                         "Daf3a_db"
-                    ).build()
+                    )
+                        .fallbackToDestructiveMigration(true)
+                        .build()
                 }
             }
             return INSTANCE!!
