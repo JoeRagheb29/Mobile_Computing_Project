@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">Mobile_Computing_Project</string>
     <string name="title_activity_home">HomeActivity</string>
+    <string name="two_factor_auth_title">Two-Factor Authentication</string>
+    <string name="two_factor_auth_subtitle">Enter the 6-digit code sent via SMS to %1$s</string>
+    <string name="verify_code">Verify Code</string>
+    <string name="resend_code">Resend Code</string>
+    <string name="cancel">Cancel</string>
+    <string name="otp_verified_success">Code verified successfully</string>
+    <string name="otp_expired_error">Code expired. Please request a new one.</string>
+    <string name="otp_invalid_error">Invalid verification code. Please try again.</string>
 </resources>
