@@ -40,8 +40,8 @@ class TransactionReceiptActivity : AppCompatActivity() {
         // استقبال البيانات من الشاشة السابقة (مع قيم افتراضية للتجربة السريعة)
         val transactionId = intent.getStringExtra(EXTRA_TXN_ID) ?: "TXN-98451203"
         val amount = intent.getStringExtra(EXTRA_AMOUNT) ?: "1,250.00 EGP"
-        val sender = intent.getStringExtra(EXTRA_SENDER) ?: "ahmed@instapay"
-        val receiver = intent.getStringExtra(EXTRA_RECEIVER) ?: "mohamed@instapay"
+        val sender = intent.getStringExtra(EXTRA_SENDER) ?: "Ahmed"
+        val receiver = intent.getStringExtra(EXTRA_RECEIVER) ?: "Mohamed"
         val date = intent.getStringExtra(EXTRA_DATE) ?: "19 Nov 2026, 08:45 PM"
         val status = intent.getStringExtra(EXTRA_STATUS) ?: "Transfer Successful"
 
@@ -58,7 +58,7 @@ class TransactionReceiptActivity : AppCompatActivity() {
         // مشاركة كنص
         btnShareText.setOnClickListener {
             val receiptText = """
-                Mini InstaPay Receipt
+                Daf3a Receipt
                 ---------------------
                 Status: $status
                 Amount: $amount

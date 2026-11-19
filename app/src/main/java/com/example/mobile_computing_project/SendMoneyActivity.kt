@@ -203,7 +203,6 @@ class SendMoneyActivity : ComponentActivity() {
             val formattedDate = getCurrentFormattedDate()
             withContext(Dispatchers.Main) {
                 balance = newBalance
-                showMessage("Sent $amount to ${receiver.username}")
                 pickedPhone = ""
                 clearTrigger++
                 TransactionReceiptActivity.start(
@@ -252,7 +251,6 @@ class SendMoneyActivity : ComponentActivity() {
             val formattedDate = getCurrentFormattedDate()
             withContext(Dispatchers.Main) {
                 balance = newBalance
-                showMessage("Sent $amount to wallet $phone")
                 pickedPhone = ""
                 clearTrigger++
                 TransactionReceiptActivity.start(

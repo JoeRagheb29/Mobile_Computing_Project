@@ -306,6 +306,15 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
+            text = "Daf3a",
+            fontSize = 38.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Daf3aPrimary
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
             text = "Welcome, $username!",
             fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
