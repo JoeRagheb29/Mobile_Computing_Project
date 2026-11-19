@@ -82,7 +82,8 @@ class SendMoneyActivity : ComponentActivity() {
                         },
                         modifier = Modifier.padding(innerPadding),
                         pickedPhone = pickedPhone,
-                        clearTrigger = clearTrigger
+                        clearTrigger = clearTrigger,
+                        onBackClick = { finish() }
                     )
                 }
             }
