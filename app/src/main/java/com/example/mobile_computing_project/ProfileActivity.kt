@@ -1,6 +1,5 @@
 package com.example.mobile_computing_project
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -43,12 +42,6 @@ class ProfileActivity : ComponentActivity() {
             if (user != null) {
                 ProfileScreen(
                     user = user!!,
-                    onLogoutClick = {
-                        sessionManager.logout()
-                        val intent = Intent(this, MainActivity::class.java)
-                        startActivity(intent)
-                        finish()
-                    },
                     onBackClick = {
                         finish() // ارجعي للهوم
                     }

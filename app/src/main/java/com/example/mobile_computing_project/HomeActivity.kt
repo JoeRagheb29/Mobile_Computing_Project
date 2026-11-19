@@ -39,6 +39,18 @@ class HomeActivity : ComponentActivity() {
                     }
                     startActivity(intent)
                 },
+                onProfileClick = {
+                    val intent = Intent(this, ProfileActivity::class.java).apply {
+                        putExtra("EXTRA_USER_ID", userId)
+                    }
+                    startActivity(intent)
+                },
+                onTransactionsClick = {
+                    val intent = Intent(this, TransactionHistoryActivity::class.java).apply {
+                        putExtra("EXTRA_USER_ID", userId)
+                    }
+                    startActivity(intent)
+                },
                 onLogoutClick = {
                     sessionManager.logout()
                     val intent = Intent(this, MainActivity::class.java)
@@ -55,6 +67,8 @@ fun HomePlaceholderScreen(
     username: String,
     userId: Int,
     onSendMoneyClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onTransactionsClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     Column(
@@ -88,6 +102,34 @@ fun HomePlaceholderScreen(
                 .height(50.dp)
         ) {
             Text("Send Money", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Transaction history button
+        Button(
+            onClick = onTransactionsClick,
+            colors = ButtonDefaults.buttonColors(containerColor = Daf3aPrimary),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Transaction History", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Profile button
+        Button(
+            onClick = onProfileClick,
+            colors = ButtonDefaults.buttonColors(containerColor = Daf3aPrimary),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Profile", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
