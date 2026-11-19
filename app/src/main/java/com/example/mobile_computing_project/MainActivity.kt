@@ -13,6 +13,7 @@ import com.example.mobile_computing_project.DataBase.SessionManager
 import com.example.mobile_computing_project.DataBase.UserEntity
 import com.example.mobile_computing_project.ui.LoginScreen
 import com.example.mobile_computing_project.ui.RegisterScreen
+import com.example.mobile_computing_project.ui.TwoFactorAuthDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -73,9 +74,15 @@ class MainActivity : ComponentActivity() {
             val user = db.userDao().getByUsername(username)
             withContext(Dispatchers.Main) {
                 if (user != null && user.password == password) {
-                    sessionManager.saveUserSession(user.userId, user.username)
-                    Toast.makeText(this@MainActivity, "Welcome ${user.username}!", Toast.LENGTH_SHORT).show()
-                    navigateToHome(user.userId, user.username)
+                    TwoFactorAuthDialog(
+                        context = this@MainActivity,
+                        userPhone = user.phone,
+                        onVerified = {
+                            sessionManager.saveUserSession(user.userId, user.username)
+                            Toast.makeText(this@MainActivity, "Welcome ${user.username}!", Toast.LENGTH_SHORT).show()
+                            navigateToHome(user.userId, user.username)
+                        }
+                    ).show()
                 } else {
                     Toast.makeText(this@MainActivity, "Invalid username or password", Toast.LENGTH_SHORT).show()
                 }
@@ -114,6 +121,26 @@ class MainActivity : ComponentActivity() {
                 return@launch
             }
 
+            withContext(Dispatchers.Main) {
+                TwoFactorAuthDialog(
+                    context = this@MainActivity,
+                    userPhone = phone,
+                    onVerified = {
+                        completeRegistration(username, phone, password, balance, onSuccess)
+                    }
+                ).show()
+            }
+        }
+    }
+
+    private fun completeRegistration(
+        username: String,
+        phone: String,
+        password: String,
+        balance: Long,
+        onSuccess: () -> Unit
+    ) {
+        lifecycleScope.launch(Dispatchers.IO) {
             val newUser = UserEntity(
                 username = username,
                 password = password,
